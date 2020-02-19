@@ -8,6 +8,7 @@
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../sdk'))
 import pandas as pd
 import numpy as np
@@ -284,7 +285,7 @@ class DPVerification:
     def yarrow_test(self, dataset_path, f, *args, numbins=0, binsize="auto", debug=False, plot=True, bound=True, exact=False, repeat_count=10000, **kwargs):
         ag = agg.Aggregation(t=1, repeat_count=repeat_count)
         self.dataset_path = dataset_path
-        d1, d2 = self.generate_neighbors(load_csv=True)
+        d1, d2, d1_metadata, d2_metadata = self.generate_neighbors(load_csv=True)
         
         d1_file_path = os.path.join(self.file_dir, self.csv_path , "d1.csv")
         d2_file_path = os.path.join(self.file_dir, self.csv_path , "d2.csv")
@@ -427,14 +428,15 @@ class DPVerification:
         query_str = "SELECT SUM(Usage) AS TotalUsage FROM "
         dp_res = self.dp_powerset_test(query_str, plot=False)
 
-        # Yarrow Test
-        dataset_root = os.getenv('DATASET_ROOT', '/home/ankit/Documents/github/datasets/')
+        # # Yarrow Test
+        dataset_root = os.getenv('DATASET_ROOT', '/e/Git/PrivacyToolsProject/datasets/')
         test_csv_path = dataset_root + 'data/PUMS_california_demographics_1000/data.csv'
+        privacy_usage = yarrow.privacy_usage(epsilon=0.15)
 
-        dp_yarrow_mean_res = self.yarrow_test(test_csv_path, yarrow.dp_mean, 'income', float, epsilon=self.epsilon, minimum=0, maximum=100, num_records=1000)
-        dp_yarrow_var_res = self.yarrow_test(test_csv_path, yarrow.dp_variance, 'educ', int, epsilon=self.epsilon, minimum=0, maximum=12, num_records=1000)
-        dp_yarrow_moment_res = self.yarrow_test(test_csv_path, yarrow.dp_moment_raw, 'married', float, epsilon=.15, minimum=0, maximum=12, num_records=1000000, order = 3)
-        dp_yarrow_covariance_res = self.yarrow_test(test_csv_path, yarrow.dp_covariance, 'married', int, 'sex', int, epsilon=.15, minimum_x=0, maximum_x=1, minimum_y=0, maximum_y=1, num_records=1000)
+        dp_yarrow_mean_res = self.yarrow_test(test_csv_path, yarrow.ops.dp_mean, 'age', int, privacy_usage=privacy_usage, data_min=0, data_max=100, data_n=1000)
+        dp_yarrow_var_res = self.yarrow_test(test_csv_path, yarrow.ops.dp_variance, 'educ', int, privacy_usage=privacy_usage, data_min=0, data_max=12, data_n=1000)
+        dp_yarrow_moment_res = self.yarrow_test(test_csv_path, yarrow.ops.dp_moment_raw, 'married', float, privacy_usage=privacy_usage, data_min=0, data_max=12, data_n=1000000, order = 3)
+        dp_yarrow_covariance_res = self.yarrow_test(test_csv_path, yarrow.ops.dp_covariance, 'married', int, 'sex', int, privacy_usage=privacy_usage, left_min=0, left_max=1, right_min=0, right_max=1, left_n=1000, right_n=1000)
         return dp_yarrow_mean_res
 
 if __name__ == "__main__":

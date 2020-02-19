@@ -83,7 +83,7 @@ class Aggregation:
     def yarrow_dp_agg(self, f, dataset_path, args, kwargs):
         with yarrow.Analysis() as analysis:
             df = yarrow.Dataset('df', dataset_path)
-            agg = f(df[args], **kwargs)
+            agg = f(data=df[(args[0], args[1])], **kwargs)
         noisy_values = []
         for x in range(self.repeat_count):
             analysis.release()
