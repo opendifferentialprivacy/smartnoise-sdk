@@ -80,10 +80,10 @@ class Aggregation:
         return np.subtract(np.divide(sumsq, cnt), np.power(np.divide(sum, cnt), 2))
 
     # Apply noise to input aggregation function using Yarrow library
-    def yarrow_dp_agg(self, f, dataset_path, args, kwargs):
+    def yarrow_dp_agg(self, f, dataset, args, kwargs):
         with yarrow.Analysis() as analysis:
-            df = yarrow.Dataset('df', dataset_path)
-            agg = f(data=df[(args[0], args[1])], **kwargs)
+            df = dataset[args[0]].tolist()
+            agg = f(data=df, **kwargs)
         noisy_values = []
         for x in range(self.repeat_count):
             analysis.release()

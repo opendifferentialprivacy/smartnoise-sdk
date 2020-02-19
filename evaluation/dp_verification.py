@@ -286,16 +286,13 @@ class DPVerification:
         ag = agg.Aggregation(t=1, repeat_count=repeat_count)
         self.dataset_path = dataset_path
         d1, d2, d1_metadata, d2_metadata = self.generate_neighbors(load_csv=True)
-        
-        d1_file_path = os.path.join(self.file_dir, self.csv_path , "d1.csv")
-        d2_file_path = os.path.join(self.file_dir, self.csv_path , "d2.csv")
 
         if(len(args) == 4):
-            fD1 = ag.yarrow_dp_multi_agg(f, d1_file_path, args, kwargs)
-            fD2 = ag.yarrow_dp_multi_agg(f, d2_file_path, args, kwargs)
+            fD1 = ag.yarrow_dp_multi_agg(f, d1, args, kwargs)
+            fD2 = ag.yarrow_dp_multi_agg(f, d2, args, kwargs)
         else:
-            fD1 = ag.yarrow_dp_agg(f, d1_file_path, args, kwargs)
-            fD2 = ag.yarrow_dp_agg(f, d2_file_path, args, kwargs)
+            fD1 = ag.yarrow_dp_agg(f, d1, args, kwargs)
+            fD2 = ag.yarrow_dp_agg(f, d2, args, kwargs)
 
         d1size, d2size = fD1.size, fD2.size
         d1hist, d2hist, bin_edges = \
@@ -428,7 +425,7 @@ class DPVerification:
         query_str = "SELECT SUM(Usage) AS TotalUsage FROM "
         dp_res = self.dp_powerset_test(query_str, plot=False)
 
-        # # Yarrow Test
+        # Yarrow Test
         dataset_root = os.getenv('DATASET_ROOT', '/e/Git/PrivacyToolsProject/datasets/')
         test_csv_path = dataset_root + 'data/PUMS_california_demographics_1000/data.csv'
         privacy_usage = yarrow.privacy_usage(epsilon=0.15)
