@@ -10,7 +10,8 @@ from opendp.whitenoise.metadata import CollectionMetadata
 try:
     from opendp.whitenoise.synthesizers.preprocessors.preprocessing import GeneralTransformer
     from opendp.whitenoise.synthesizers.pytorch.pytorch_synthesizer import PytorchDPSynthesizer
-    from opendp.whitenoise.synthesizers.pytorch.nn import DPGAN, DPCTGAN
+    from opendp.whitenoise.synthesizers.pytorch.nn import DPGAN
+    from opendp.whitenoise.synthesizers.pytorch.nn.dp_ctgan import DPCTGAN
 
 except:
     import logging
