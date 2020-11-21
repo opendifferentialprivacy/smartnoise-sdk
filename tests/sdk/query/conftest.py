@@ -1,9 +1,12 @@
 import os
 import pytest
 import subprocess
+import logging
 import pandas as pd
 from opendp.smartnoise.sql import PrivateReader, PandasReader, PostgresReader, SqlServerReader
 from opendp.smartnoise.metadata.collection import CollectionMetadata
+
+module_logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope="module")
 def reader_factory():
@@ -39,13 +42,39 @@ def reader_factory():
                 self.port = 5432
             self.db = os.environ.get('POSTGRES_DB')
             if self.db is None:
-                self.db = "pums" # needs to be lowercase
+                self.db = "PUMS"
             if self.password is None:
                 self.installed = False
             else:
                 self.installed = True
         def create(self):
             return PostgresReader(self.host, self.db, self.user, self.password, self.port)
+    class SqlServer(Factory):
+        def __init__(self):
+            self.password = os.environ.get('SQLSERVER_PASSWORD')
+            self.user = os.environ.get('SQLSERVER_USER')
+            if self.user is None:
+                self.user = "sa"
+            self.host = os.environ.get('SQLSERVER_HOST')
+            if self.host is None:
+                self.host = "localhost"
+            self.port = os.environ.get('SQLSERVER_PORT')
+            if self.port is None:
+                self.port = 1433
+            self.db = os.environ.get('SQLSERVER_DB')
+            if self.db is None:
+                self.db = "PUMS"
+            if self.password is None:
+                self.installed = False
+            else:
+                self.installed = True
+        def create(self):
+            return SqlServerReader(self.host, self.db, self.user, self.password, self.port)
+
     
-    factories = [Pandas(), Postgres()]
-    return [factory for factory in factories if factory.installed]
+    factories = [Pandas(), Postgres(), SqlServer()]
+    factories = [factory for factory in factories if factory.installed]
+    print("\nFound {0} databases".format(len(factories)))
+    for factory in factories:
+        print("Testing database: {0}".format(str(type(factory))))
+    return factories

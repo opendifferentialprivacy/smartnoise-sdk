@@ -1,2 +1,2 @@
-psql -U postgres -f CREATE.new.sql
+psql -U postgres -f CREATE.sql
 

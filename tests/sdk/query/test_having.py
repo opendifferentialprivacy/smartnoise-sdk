@@ -18,24 +18,23 @@ git_root_dir = subprocess.check_output("git rev-parse --show-toplevel".split(" "
 meta_path = os.path.join(git_root_dir, os.path.join("service", "datasets", "PUMS.yaml"))
 csv_path = os.path.join(git_root_dir, os.path.join("service", "datasets", "PUMS.csv"))
 
-meta = CollectionMetadata.from_file(meta_path)
-meta["PUMS.PUMS"].censor_dims = False
-
+meta_save = CollectionMetadata.from_file(meta_path)
+meta_save["PUMS.PUMS"].censor_dims = False
 
 class TestBaseTypes:
-    def setup_class(cls):
+    def setup_class(self):
         meta = CollectionMetadata.from_file(meta_path)
         meta["PUMS.PUMS"].censor_dims = False
         df = pd.read_csv(csv_path)
         reader = PandasReader(df, meta)
         private_reader = PrivateReader(reader, meta, 10.0, 10E-3)
-        cls.reader = private_reader
+        self.reader = private_reader
 
     def test_queries(self, reader_factory):
         query = "SELECT age, sex, COUNT(*) AS n, SUM(income) AS income FROM PUMS.PUMS GROUP BY age, sex HAVING income > 100000"
         for factory in reader_factory:
-            reader = factory.create_private(meta, 10.0, 10E-3)
-            res = [len(self.reader.execute(query)) for i in range(5)]
+            reader = factory.create_private(meta_save, 10.0, 10E-3)
+            res = [len(reader.execute(query)) for i in range(5)]
             assert np.mean(res) < 115 and np.mean(res) > 10 # actual is 14, but noise is huge
 
         query = "SELECT age, sex, COUNT(*) AS n, SUM(income) AS income FROM PUMS.PUMS GROUP BY age, sex HAVING sex = 1"
@@ -46,6 +45,12 @@ class TestBaseTypes:
         res = self.reader.execute(query)
         assert len(res) > 80 and len(res) < 150
 
+        meta = CollectionMetadata.from_file(meta_path)
+        meta["PUMS.PUMS"].censor_dims = False
+        df = pd.read_csv(csv_path)
+        reader = PandasReader(df, meta)
+        private_reader = PrivateReader(reader, meta, 10.0, 10E-3)
+        self.reader = private_reader
         query = "SELECT age, COUNT(*) FROM PUMS.PUMS GROUP BY age HAVING age < 30 OR age > 60"
         res = self.reader.execute(query)
         assert len(res) == 43
@@ -96,6 +101,12 @@ class TestOtherTypes:
         res = self.reader.execute(query)
         assert len(res) > 80 and len(res) < 150
 
+        meta = CollectionMetadata.from_file(meta_path)
+        meta["PUMS.PUMS"].censor_dims = False
+        df = pd.read_csv(csv_path)
+        reader = PandasReader(df, meta)
+        private_reader = PrivateReader(reader, meta, 10.0, 10E-3)
+        self.reader = private_reader
         query = "SELECT age, COUNT(*) FROM PUMS.PUMS GROUP BY age HAVING age < 30 OR age > 60"
         res = self.reader.execute(query)
         assert len(res) == 43
