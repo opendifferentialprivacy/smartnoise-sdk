@@ -14,7 +14,7 @@ from opendp.smartnoise.sql.parse import QueryParser
 
 git_root_dir = subprocess.check_output("git rev-parse --show-toplevel".split(" ")).decode("utf-8").strip()
 
-meta_path = os.path.join(git_root_dir, os.path.join("service", "datasets", "PUMS.yaml"))
+meta_path = os.path.join(git_root_dir, os.path.join("service", "datasets", "PUMS_row.yaml"))
 csv_path = os.path.join(git_root_dir, os.path.join("service", "datasets", "PUMS.csv"))
 
 meta_save = CollectionMetadata.from_file(meta_path)
@@ -44,12 +44,6 @@ class TestBaseTypes:
         res = self.reader.execute(query)
         assert len(res) > 80 and len(res) < 150
 
-        meta = CollectionMetadata.from_file(meta_path)
-        meta["PUMS.PUMS"].censor_dims = False
-        df = pd.read_csv(csv_path)
-        reader = PandasReader(df, meta)
-        private_reader = PrivateReader(reader, meta, 10.0, 10E-3)
-        self.reader = private_reader
         query = "SELECT age, COUNT(*) FROM PUMS.PUMS GROUP BY age HAVING age < 30 OR age > 60"
         res = self.reader.execute(query)
         assert len(res) == 43
@@ -100,13 +94,7 @@ class TestOtherTypes:
         res = self.reader.execute(query)
         assert len(res) > 80 and len(res) < 150
 
-        meta = CollectionMetadata.from_file(meta_path)
-        meta["PUMS.PUMS"].censor_dims = False
-        df = pd.read_csv(csv_path)
-        reader = PandasReader(df, meta)
-        private_reader = PrivateReader(reader, meta, 10.0, 10E-3)
-        self.reader = private_reader
-        query = "SELECT age, COUNT(*) FROM PUMS.PUMS GROUP BY age HAVING age < 30 OR age > 60"
+        query = "SELECT age, COUNT(*) AS n FROM PUMS.PUMS GROUP BY age HAVING age < 30 OR age > 60"
         res = self.reader.execute(query)
         assert len(res) == 43
 

@@ -45,7 +45,6 @@ class TestAst:
         err.match("^Lexer error")
     def test_all_good_queries(self):
         for goodpath in good_files:
-            print(goodpath)
             gqt = GoodQueryTester(goodpath)
             gqt.runParse()
             gqt.runBuild()
@@ -66,15 +65,19 @@ class GoodQueryTester:
             self.walk_children(n)
     def runParse(self):
         for query in self.queries:
-            print(query)
-            QueryParser().parse_only(query)
+            try:
+                QueryParser().parse_only(query)
+            except Exception as e:
+                raise ValueError("Failure parsing query: {0}: {1}".format(query, str(e)))
     def runBuild(self):
         for query in self.queries:
-            q = QueryParser().query(query)
-            self.walk_children(q)
-#        assert len(qb) == len(self.queries)
-            assert query.replace(' ','').replace('\n','').lower() == str(q).replace(' ','').replace('\n','').lower()
-            self.runParseAgain(q)
+            try:
+                q = QueryParser().query(query)
+                self.walk_children(q)
+                assert query.replace(' ','').replace('\n','').lower() == str(q).replace(' ','').replace('\n','').lower()
+                self.runParseAgain(q)
+            except Exception as e:
+                raise ValueError("Failure building AST for query: {0}: {1}".format(query, str(e)))
     def runParseAgain(self, q):
         """ Converts AST to text, re-parses to AST, and compares the two ASTs"""
         repeat = QueryParser().query(str(q))
@@ -89,14 +92,13 @@ class BadQueryTester:
         self.queries = [q.strip() for q in queryLines.split(";") if q.strip() != ""]
     def runParse(self, exc):
         for query in self.queries:
-            print(query)
             failed = False
             try:
                 QueryParser().parse_only(query)
             except exc:
                 failed = True
             if not failed:
-                print("{0} should have thrown ValueError, but succeeded".format(query))
+                raise ValueError("{0} should have thrown ValueError, but succeeded".format(query))
             assert failed
     def runBuild(self, exc):
         for query in self.queries:
@@ -106,5 +108,5 @@ class BadQueryTester:
             except exc:
                 failed = True
             if not failed:
-                print("{0} should have thrown ValueError, but succeeded".format(query))
+                raise ValueError("{0} should have thrown ValueError, but succeeded".format(query))
             assert failed

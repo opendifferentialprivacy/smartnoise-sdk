@@ -17,6 +17,16 @@ class AllColumns(SqlExpr):
         if len(sym) == 0:
             raise ValueError("Column cannot be found " + str(self))
         return flatten(sym)
+    def symbol(self, relations):
+        return AllColumns(Seq([sym for name, sym in self.all_symbols(relations)]))
+    def children(self):
+        if self.table is None or isinstance(self.table, str):
+            # symbols have not been resolved
+            return [None]
+        else:
+            # return resolved tables
+            return [self.table]
+
     @property
     def is_key_count(self):
         return True
