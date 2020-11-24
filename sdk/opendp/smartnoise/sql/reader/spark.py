@@ -10,7 +10,7 @@ class SparkReader(SqlReader):
 
     def __init__(self, session):
         super().__init__(SparkNameCompare(), SparkSerializer())
-        from pyspark.sql import SparkSession  # TODO how do we deal with reader dependencies
+        from pyspark.sql import SparkSession
         self.api = session
         self.database = "Spark Session"
 
@@ -20,7 +20,7 @@ class SparkReader(SqlReader):
 
         return self.api.sql(query)
 
-    def _to_df(rows):
+    def _to_df(self, rows):
         return rows
         
     def execute_typed(self, query):
