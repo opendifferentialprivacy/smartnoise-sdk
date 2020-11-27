@@ -1,6 +1,6 @@
-SELECT 'CREATE DATABASE PUMS' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'PUMS')\gexec
-GRANT ALL PRIVILEGES ON DATABASE "PUMS" TO postgres;
-\c PUMS
+SELECT 'CREATE DATABASE pums' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'pums')\gexec
+GRANT ALL PRIVILEGES ON DATABASE "pums" TO postgres;
+\c pums
 DROP SCHEMA IF EXISTS PUMS CASCADE;
 CREATE SCHEMA PUMS
 	CREATE TABLE PUMS (age int, sex char(2), educ int, race char(2), income float, married boolean )
