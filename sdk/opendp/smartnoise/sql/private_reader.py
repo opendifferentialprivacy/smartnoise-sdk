@@ -149,6 +149,8 @@ class PrivateReader(Reader):
         subquery, query = self.rewrite(query_string)
         return subquery.numeric_symbols()
 
+
+
     def _get_reader(self, query_ast):
         if (
             query_ast.agg is not None
@@ -161,26 +163,12 @@ class PrivateReader(Reader):
         else:
             return self.reader
 
-    def execute(self, query_string):
-        """Executes a query and returns a recordset that is differentially private.
+    def _get_query_plan(self, query_ast):
+        self.refresh_options()
+        if isinstance(query_ast, str):
+            raise ValueError("Please pass AST to _get_query_plan")
 
-        Follows ODBC and DB_API convention of consuming query as a string and returning
-        recordset as tuples.  This is useful for cases where existing DB_API clients
-        want to swap out API calls with minimal changes.
-
-        :param query_string: A query string in SQL syntax
-        :return: A recordset structured as an array of tuples, where each tuple
-         represents a row, and each item in the tuple is typed.  The first row should
-         contain column names.
-        """
-        query = self.parse_query_string(query_string)
-        return self._execute_ast(query)
-
-    def _execute_ast(self, query, cache_exact=False):
-        if isinstance(query, str):
-            raise ValueError("Please pass AST to _execute_ast.")
-
-        subquery, query = self.rewrite_ast(query)
+        subquery, query = self.rewrite_ast(query_ast)
         max_contrib = self._options.max_contrib if self._options.max_contrib is not None else 1
         thresh_scale = math.sqrt(max_contrib) * (
             (
@@ -220,6 +208,39 @@ class PrivateReader(Reader):
                 "Query is attempting to query an unbounded column that isn't part of the grouping key"
             )
 
+        # make a list of mechanisms in column order
+        mechs = [
+            Gaussian(self.epsilon_per_column, self.delta, s, max_contrib) if s is not None else None
+            for s in sens
+        ]
+
+        return subquery, query, syms, source_col_names, sens, is_count, max_contrib, mechs
+
+    def get_accuracy(self, query_string):
+        """Returns a list of accuracies for all output columns.  
+            Does not run the query."""
+        query_ast = self.parse_query_string(query_string)
+        subquery, query, syms, source_col_names, sens, is_count, max_contrib, mechs = self._get_query_plan(query_ast)
+
+    def execute(self, query_string):
+        """Executes a query and returns a recordset that is differentially private.
+
+        Follows ODBC and DB_API convention of consuming query as a string and returning
+        recordset as tuples.  This is useful for cases where existing DB_API clients
+        want to swap out API calls with minimal changes.
+
+        :param query_string: A query string in SQL syntax
+        :return: A recordset structured as an array of tuples, where each tuple
+         represents a row, and each item in the tuple is typed.  The first row should
+         contain column names.
+        """
+        query = self.parse_query_string(query_string)
+        return self._execute_ast(query)
+
+    def _execute_ast(self, query, cache_exact=False):
+        subquery, query, syms, source_col_names, sens, is_count, max_contrib, mechs = self._get_query_plan(query)
+
+        # re-use keycount columns
         kc_pos = None
         kcc_pos = []
         for idx in range(len(syms)):
@@ -230,12 +251,6 @@ class PrivateReader(Reader):
                 kcc_pos.append(idx)
         if kc_pos is None and len(kcc_pos) > 0:
             kc_pos = kcc_pos.pop()
-
-        # make a list of mechanisms in column order
-        mechs = [
-            Gaussian(self.epsilon_per_column, self.delta, s, max_contrib) if s is not None else None
-            for s in sens
-        ]
 
         # execute the subquery against the backend and load in tuples
         if cache_exact:
