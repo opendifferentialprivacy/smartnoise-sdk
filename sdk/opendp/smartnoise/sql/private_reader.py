@@ -226,8 +226,8 @@ class PrivateReader(Reader):
             sname, sym = syms[idx]
             if sname == "keycount":
                 kc_pos = idx
-            elif sym.is_key_count:
-                kcc_pos.append(idx)
+            #elif sym.is_key_count:
+            #    kcc_pos.append(idx)
         if kc_pos is None and len(kcc_pos) > 0:
             kc_pos = kcc_pos.pop()
 
